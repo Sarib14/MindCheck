@@ -46,3 +46,9 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+/ios/
+/linux/
+/macos/
+/web/
+/windows/
+/flutter_01.png
