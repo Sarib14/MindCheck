@@ -62,3 +62,73 @@ flutter run
 
  ## 9. Conclusion
  Mindcheck provides a fooundation for a personal mental wellness application. Module 1 established the flutter project structure, theme, navigation, and initial screens, while additional development included functional mood tracking, encrypted local storage, mood history, deletion, and grounding exercises.
+
+ ## MODULE  02: Mood Tracking & Journal Management
+  The second module focused on implementing the core mood tracking and journal management functionality.
+
+  1. MOOD SELECTION:
+  Users can select from seven predefined moods:
+  . Happy 
+  . Calm
+  . Excited
+  . Sad
+  . Anxious
+  . Angry 
+  . Tired
+
+  2. DAILY MOOD LOGGING:
+  Users can:
+  . Select their current mood.
+  . Set mood intensity from 1 to 5.
+  . Add an optional personal journal note.
+  . Save their daily mood entry with its date and time.
+
+  3. JOURNAL ENTRY MANAGEMENT: 
+  The application supports all four CRUD operations.
+  . Create: Create new mood entries with personal journal notes.
+  . Read: View previously saved mood and journal note of an existing entry.
+  . Update: Edit the mood, intensity, and journal note of an existing entry.
+  . Delete: Delete unwanted entries after confirmation.
+
+Journal functionality is integrated into the mood check-in and history screens.
+
+4. LOCAL DATA STORAGE:
+Mood entries are saved locally on the users device.
+The application uses:
+. SharedPreferences to store encrypted data.
+. Flutter Secure Storage to store the encryption key.
+. AES-256-GCM encryption to protect saved mood entries.
+. JSON serialization and deserialization to manage stored data.
+This allows users to access their saved entries without requiring an internet connection.
+
+5. INPUT VALIDATION:
+Input validation helps maintain accurate and complete entries.
+. Mood input cannot be empty.
+. Custom mood is limited to 40 characters.
+. Journal notes are limited to 500 characters. 
+. Invalid or empty mood entries are prevented from being saved.
+
+6. ADDITIONAL FEATURES: 
+The following additional features have also been implemented:
+. Search mood entries by mood name or journal note.
+. Filter mood history by mood.
+. Light and dark mode.
+. Local persistence of theme preference.
+. Mood intensity progress indicator.
+
+7. TESTING & VERFICATION:
+The following functionality has been tested:
+. Mood Selection and custom mood input.
+. Journal note creation and viewing.
+. Editing existing mood and journal entries.
+. Deleting entries with confirmation.
+. Searching & filtering mood history.
+. Local data persistence.
+. Light and dark mode switching.
+. Application execution on an Android device.
+
+8. Conclusion: 
+. First two development modules have established the foundation and core functionality of MindCheck.
+ Moudle 1 focused on project setup, application structure, theme design, and the initial user interface.
+ Module 2 implemented daily mood tracking, journal entry management, local encrypted storage, input validation.
+ The application is now ready for the next development phase, which will focus on weekly mood summaries, guided breathing exercises, wellness tips, & further interface improvements.
