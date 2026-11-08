@@ -55,7 +55,7 @@ Grounding exercise runs successfully but needs improvement.
  Further development may include breathing exercises, mood charts, biometric/PIN, security, and emergency helpline information.
 
 ## 8. How to Run:
-git clone YOUR_GITHUB_REPOSITORY_LINK
+git clone GITHUB_REPOSITORY_LINK
 cd mindcheck
 flutter pub get
 flutter run
