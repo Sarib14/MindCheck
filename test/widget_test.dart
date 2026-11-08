@@ -6,5 +6,7 @@ void main() {
     await tester.pumpWidget(const MindCheckApp());
 
     expect(find.text('Welcome to MindCheck'), findsOneWidget);
+
   });
+
 }

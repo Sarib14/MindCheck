@@ -2,80 +2,134 @@
 import 'package:flutter/material.dart';
 import '../models/mood_entry.dart';
 import '../services/storage_service.dart';
-import '../theme/app_theme.dart';
 
-class HistoryScreen extends StatelessWidget {
+class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
 
-  String formatDate(DateTime date) {
-    final localDate = date.toLocal();
+  @override
+  State<HistoryScreen> createState() => _HistoryScreenState();
+}
 
-    return '${localDate.day}/${localDate.month}/${localDate.year} '
-        '${localDate.hour.toString().padLeft(2, '0')}:'
-        '${localDate.minute.toString().padLeft(2, '0')}';
+class _HistoryScreenState extends State<HistoryScreen> {
+  List<MoodEntry> moods = [];
+  bool isLoading = true;
+  String? errorMessage;
+
+  String selectedFilter = 'All';
+  final TextEditingController searchController = TextEditingController();
+
+  final List<String> defaultMoods = [
+    'Happy',
+    'Calm',
+    'Excited',
+    'Sad',
+    'Anxious',
+    'Angry',
+    'Tired',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    loadMoods();
+
+    searchController.addListener(() {
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> loadMoods() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+      final entries = await StorageService.getMoods();
+
+      if (!mounted) return;
+
+      setState(() {
+        moods = entries;
+        isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        errorMessage = 'Unable to load mood history.';
+        isLoading = false;
+      });
+    }
   }
 
   String getMoodEmoji(String mood) {
-    switch (mood) {
-      case 'Happy':
+    switch (mood.toLowerCase()) {
+      case 'happy':
         return '😊';
-      case 'Calm':
+      case 'calm':
         return '😌';
-      case 'Excited':
+      case 'excited':
         return '🤩';
-      case 'Sad':
+      case 'sad':
         return '😔';
-      case 'Anxious':
+      case 'anxious':
         return '😟';
-      case 'Angry':
+      case 'angry':
         return '😠';
-      case 'Tired':
+      case 'tired':
         return '😴';
       default:
         return '💚';
     }
   }
 
-  Color getMoodColor(String mood) {
-    switch (mood) {
-      case 'Happy':
-        return const Color(0xFFE5F1E4);
-      case 'Calm':
-        return const Color(0xFFE5EDE7);
-      case 'Excited':
-        return const Color(0xFFFFF0D9);
-      case 'Sad':
-        return const Color(0xFFE7EAF5);
-      case 'Anxious':
-        return const Color(0xFFF8E9DC);
-      case 'Angry':
-        return const Color(0xFFF6E2E0);
-      case 'Tired':
-        return const Color(0xFFECE7F3);
-      default:
-        return const Color(0xFFE5EDE7);
-    }
+  String formatDate(DateTime date) {
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final year = date.year;
+
+    return '$day/$month/$year';
   }
 
-  Future<void> deleteMood(
-    BuildContext context,
-    MoodEntry entry,
-  ) async {
-    final confirm = await showDialog<bool>(
+  List<String> get filterOptions {
+    final customMoods = moods
+        .map((entry) => entry.mood)
+        .where((mood) => !defaultMoods.contains(mood))
+        .toSet()
+        .toList();
+
+    return ['All', ...defaultMoods, ...customMoods];
+  }
+
+  List<MoodEntry> get filteredMoods {
+    final searchText = searchController.text.toLowerCase().trim();
+
+    return moods.where((entry) {
+      final matchesFilter =
+          selectedFilter == 'All' || entry.mood == selectedFilter;
+
+      final matchesSearch =
+          entry.mood.toLowerCase().contains(searchText) ||
+          entry.note.toLowerCase().contains(searchText);
+
+      return matchesFilter && matchesSearch;
+    }).toList()
+      ..sort((a, b) => b.date.compareTo(a.date));
+  }
+
+  Future<void> deleteMood(MoodEntry entry) async {
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          backgroundColor: const Color(0xFFF5F7F2),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(22),
-          ),
-          title: const Text(
-            'Delete Mood',
-            style: TextStyle(
-              color: Color(0xFF30483C),
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          title: const Text('Delete Entry'),
           content: const Text(
             'Are you sure you want to delete this mood entry?',
           ),
@@ -90,423 +144,406 @@ class HistoryScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.pop(dialogContext, true);
               },
-              child: const Text(
-                'Delete',
-                style: TextStyle(color: Colors.red),
-              ),
+              child: const Text('Delete'),
             ),
           ],
         );
       },
     );
 
-    if (confirm != true || !context.mounted) return;
+    if (confirmed != true) return;
 
     try {
       await StorageService.deleteMood(entry);
 
-      if (!context.mounted) return;
+      if (!mounted) return;
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const HistoryScreen(),
-        ),
-      );
+      await loadMoods();
+
+      if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Mood entry deleted successfully.'),
-          backgroundColor: AppTheme.primaryColor,
         ),
       );
-    } catch (error) {
-      if (!context.mounted) return;
+    } catch (e) {
+      if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Unable to delete mood. Please try again.'),
-          backgroundColor: Colors.redAccent,
+          content: Text('Unable to delete this entry.'),
         ),
       );
     }
   }
 
-  Widget buildMoodCard(
-    BuildContext context,
-    MoodEntry entry,
-  ) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.035),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 55,
-                height: 55,
-                decoration: BoxDecoration(
-                  color: getMoodColor(entry.mood),
-                  borderRadius: BorderRadius.circular(17),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  getMoodEmoji(entry.mood),
-                  style: const TextStyle(fontSize: 29),
-                ),
-              ),
-              const SizedBox(width: 13),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      entry.mood,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF30483C),
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      formatDate(entry.date),
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: Color(0xFF78847B),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 11,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE5EDE7),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '${entry.intensity}/5',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryColor,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-              IconButton(
-                tooltip: 'Delete mood',
-                onPressed: () => deleteMood(context, entry),
-                icon: const Icon(
-                  Icons.delete_outline_rounded,
-                  color: Color(0xFFC76B65),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 15),
-          Row(
-            children: [
-              const Icon(
-                Icons.show_chart_rounded,
-                color: AppTheme.primaryColor,
-                size: 17,
-              ),
-              const SizedBox(width: 7),
-              const Text(
-                'Mood intensity',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFF78847B),
-                ),
-              ),
-              const Spacer(),
-              Text(
-                '${entry.intensity} out of 5',
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF30483C),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 9),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: LinearProgressIndicator(
-              value: (entry.intensity.clamp(1, 5)) / 5,
-              minHeight: 7,
-              backgroundColor: const Color(0xFFE5EDE7),
-              color: AppTheme.primaryColor,
-            ),
-          ),
-          if (entry.note.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF5F7F2),
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Row(
+  Future<void> editMood(MoodEntry entry) async {
+    final moodController = TextEditingController(text: entry.mood);
+    final noteController = TextEditingController(text: entry.note);
+
+    int intensity = entry.intensity;
+    final formKey = GlobalKey<FormState>();
+
+    final updated = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, updateDialog) {
+            return AlertDialog(
+              title: const Text('Edit Mood Entry'),
+              content: SingleChildScrollView(
+                child: Form(
+                  key: formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        Icons.edit_note_rounded,
-                        size: 18,
-                        color: AppTheme.primaryColor,
+                      TextFormField(
+                        controller: moodController,
+                        maxLength: 40,
+                        decoration: const InputDecoration(
+                          labelText: 'Mood',
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Please enter a mood.';
+                          }
+
+                          if (value.trim().length > 40) {
+                            return 'Mood must be 40 characters or less.';
+                          }
+
+                          return null;
+                        },
                       ),
-                      SizedBox(width: 7),
-                      Text(
-                        'Your reflection',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                          color: Color(0xFF30483C),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Mood Intensity',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Slider(
+                        value: intensity.toDouble(),
+                        min: 1,
+                        max: 5,
+                        divisions: 4,
+                        label: intensity.toString(),
+                        onChanged: (value) {
+                          updateDialog(() {
+                            intensity = value.round();
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: noteController,
+                        maxLength: 500,
+                        maxLines: 4,
+                        decoration: const InputDecoration(
+                          labelText: 'Journal Note',
+                          hintText: 'Write about your feelings...',
+                          border: OutlineInputBorder(),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    entry.note,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF64766A),
-                      height: 1.5,
-                    ),
-                  ),
-                ],
+                ),
               ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(dialogContext, false);
+                  },
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (!formKey.currentState!.validate()) return;
+
+                    final updatedEntry = entry.copyWith(
+                      mood: moodController.text.trim(),
+                      intensity: intensity,
+                      note: noteController.text.trim(),
+                    );
+
+                    try {
+                      await StorageService.updateMood(updatedEntry);
+
+                      if (dialogContext.mounted) {
+                        Navigator.pop(dialogContext, true);
+                      }
+                    } catch (e) {
+                      if (dialogContext.mounted) {
+                        ScaffoldMessenger.of(dialogContext).showSnackBar(
+                          const SnackBar(
+                            content: Text('Unable to update this entry.'),
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  child: const Text('Save Changes'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    moodController.dispose();
+    noteController.dispose();
+
+    if (updated == true && mounted) {
+      await loadMoods();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Mood entry updated successfully.'),
+        ),
+      );
+    }
+  }
+
+  Widget buildMoodCard(MoodEntry entry) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
+    return Card(
+      color: theme.cardColor,
+      elevation: 1,
+      margin: const EdgeInsets.only(bottom: 14),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  getMoodEmoji(entry.mood),
+                  style: const TextStyle(fontSize: 30),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        entry.mood,
+                        style: theme.textTheme.titleMedium,
+                      ),
+                      Text(
+                        formatDate(entry.date),
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Edit entry',
+                  onPressed: () => editMood(entry),
+                  icon: Icon(
+                    Icons.edit_outlined,
+                    color: colors.primary,
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Delete entry',
+                  onPressed: () => deleteMood(entry),
+                  icon: const Icon(
+                    Icons.delete_outline,
+                    color: Colors.redAccent,
+                  ),
+                ),
+              ],
             ),
+            const SizedBox(height: 14),
+            Text(
+              'Intensity: ${entry.intensity}/5',
+              style: theme.textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 8),
+            LinearProgressIndicator(
+              value: entry.intensity / 5,
+              minHeight: 7,
+              borderRadius: BorderRadius.circular(10),
+              backgroundColor: colors.surfaceContainerHighest,
+              color: colors.primary,
+            ),
+            if (entry.note.trim().isNotEmpty) ...[
+              const SizedBox(height: 14),
+              Text(
+                'Journal Note',
+                style: theme.textTheme.titleSmall,
+              ),
+              const SizedBox(height: 5),
+              Text(
+                entry.note,
+                style: theme.textTheme.bodyMedium,
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final visibleMoods = filteredMoods;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7F2),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF5F7F2),
-        elevation: 0,
-        title: const Text(
-          'Mood History',
-          style: TextStyle(
-            color: Color(0xFF30483C),
-            fontWeight: FontWeight.bold,
+        title: const Text('Mood History'),
+        actions: [
+          IconButton(
+            onPressed: loadMoods,
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Refresh history',
           ),
-        ),
-        iconTheme: const IconThemeData(
-          color: Color(0xFF30483C),
-        ),
+        ],
       ),
-      body: FutureBuilder<List<MoodEntry>>(
-        future: StorageService.getMoods(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(
-                color: AppTheme.primaryColor,
+      body: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: colors.secondaryContainer,
+                borderRadius: BorderRadius.circular(18),
               ),
-            );
-          }
-
-          if (snapshot.hasError) {
-            return const Center(
-              child: Text(
-                'Unable to load mood history. Please try again.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Color(0xFF78847B)),
-              ),
-            );
-          }
-
-          final moods = snapshot.data ?? [];
-
-          if (moods.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(30),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(25),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFE5EDE7),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.history_rounded,
-                        size: 65,
-                        color: AppTheme.primaryColor,
-                      ),
-                    ),
-                    const SizedBox(height: 22),
-                    const Text(
-                      'Your story starts here',
-                      style: TextStyle(
-                        fontSize: 21,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF30483C),
-                      ),
-                    ),
-                    const SizedBox(height: 9),
-                    const Text(
-                      'No mood entries found yet. Start your first mood check-in and your reflections will appear here.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Color(0xFF78847B),
-                        height: 1.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
-
-          final sortedMoods = moods.reversed.toList();
-
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(20, 15, 20, 30),
-            children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(22),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor,
-                  borderRadius: BorderRadius.circular(23),
-                ),
-                child: Row(
-                  children: [
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Your wellbeing journey',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 17,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(height: 7),
-                          Text(
-                            'Every check-in is a step towards understanding yourself.',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              height: 1.5,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    const Icon(
-                      Icons.spa_outlined,
-                      color: Colors.white,
-                      size: 43,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-              Container(
-                padding: const EdgeInsets.all(19),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.auto_awesome_outlined,
-                      color: AppTheme.primaryColor,
-                      size: 28,
-                    ),
-                    const SizedBox(width: 13),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Your check-ins',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Color(0xFF78847B),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${moods.length} mood ${moods.length == 1 ? 'entry' : 'entries'} saved',
-                            style: const TextStyle(
-                              fontSize: 19,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF30483C),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 25),
-              const Text(
-                'Your recent moods',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF30483C),
-                ),
-              ),
-              const SizedBox(height: 15),
-              ...sortedMoods.map(
-                (entry) => buildMoodCard(context, entry),
-              ),
-              const SizedBox(height: 10),
-              const Center(
-                child: Text(
-                  'Keep checking in with yourself. Every feeling matters.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Color(0xFF89948C),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Your Emotional Journey',
+                    style: theme.textTheme.titleLarge,
                   ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Review your moods and personal reflections.',
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    '${moods.length} mood entries saved',
+                    style: theme.textTheme.titleMedium,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
+            TextField(
+              controller: searchController,
+              decoration: InputDecoration(
+                hintText: 'Search moods or journal notes',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: searchController.text.isEmpty
+                    ? null
+                    : IconButton(
+                        onPressed: searchController.clear,
+                        icon: const Icon(Icons.clear),
+                      ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
                 ),
               ),
-            ],
-          );
-        },
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              initialValue: selectedFilter,
+              decoration: InputDecoration(
+                labelText: 'Filter by mood',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              items: filterOptions.map((mood) {
+                return DropdownMenuItem<String>(
+                  value: mood,
+                  child: Text(mood),
+                );
+              }).toList(),
+              onChanged: (value) {
+                if (value == null) return;
+
+                setState(() {
+                  selectedFilter = value;
+                });
+              },
+            ),
+            const SizedBox(height: 18),
+            Expanded(
+              child: isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(),
+                    )
+                  : errorMessage != null
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(errorMessage!),
+                              const SizedBox(height: 10),
+                              ElevatedButton(
+                                onPressed: loadMoods,
+                                child: const Text('Try Again'),
+                              ),
+                            ],
+                          ),
+                        )
+                      : visibleMoods.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.history,
+                                    size: 55,
+                                    color: colors.primary,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    moods.isEmpty
+                                        ? 'No mood entries yet.'
+                                        : 'No matching entries found.',
+                                    style: theme.textTheme.titleMedium,
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    moods.isEmpty
+                                        ? 'Start a mood check-in to see your history.'
+                                        : 'Try another search or mood filter.',
+                                    textAlign: TextAlign.center,
+                                    style: theme.textTheme.bodyMedium,
+                                  ),
+                                ],
+                              ),
+                            )
+                          : ListView.builder(
+                              itemCount: visibleMoods.length,
+                              itemBuilder: (context, index) {
+                                return buildMoodCard(
+                                  visibleMoods[index],
+                                );
+                              },
+                            ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
-

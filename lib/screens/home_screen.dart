@@ -1,12 +1,18 @@
 
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../providers/theme_controller.dart';
 import 'mood_checkin_screen.dart';
 import 'history_screen.dart';
 import 'grounding_screen.dart';
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  final ThemeController themeController;
+
+  const HomeScreen({
+    super.key,
+    required this.themeController,
+  });
 
   void openScreen(BuildContext context, Widget screen) {
     Navigator.push(
@@ -22,6 +28,9 @@ class HomeScreen extends StatelessWidget {
     required String subtitle,
     required VoidCallback onTap,
   }) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
     return Expanded(
       child: InkWell(
         onTap: onTap,
@@ -29,7 +38,7 @@ class HomeScreen extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: theme.cardColor,
             borderRadius: BorderRadius.circular(22),
             boxShadow: [
               BoxShadow(
@@ -45,30 +54,28 @@ class HomeScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppTheme.accentColor,
+                  color: colors.secondaryContainer,
                   borderRadius: BorderRadius.circular(15),
                 ),
                 child: Icon(
                   icon,
-                  color: AppTheme.primaryColor,
+                  color: colors.primary,
                   size: 27,
                 ),
               ),
               const SizedBox(height: 18),
               Text(
                 title,
-                style: const TextStyle(
+                style: theme.textTheme.titleMedium?.copyWith(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF30483C),
                 ),
               ),
               const SizedBox(height: 6),
               Text(
                 subtitle,
-                style: const TextStyle(
+                style: theme.textTheme.bodyMedium?.copyWith(
                   fontSize: 12,
-                  color: Color(0xFF78847B),
                   height: 1.4,
                 ),
               ),
@@ -81,8 +88,11 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7F2),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(22, 18, 22, 30),
@@ -94,61 +104,59 @@ class HomeScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(11),
                     decoration: BoxDecoration(
-                      color: AppTheme.accentColor,
+                      color: colors.secondaryContainer,
                       borderRadius: BorderRadius.circular(15),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.spa_outlined,
-                      color: AppTheme.primaryColor,
+                      color: colors.primary,
                       size: 28,
                     ),
                   ),
                   const SizedBox(width: 12),
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'MindCheck',
-                        style: TextStyle(
-                          fontSize: 21,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF30483C),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'MindCheck',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontSize: 21,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                      Text(
-                        'Your personal wellbeing space',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Color(0xFF78847B),
+                        Text(
+                          'Your personal wellbeing space',
+                          style: theme.textTheme.bodySmall,
                         ),
-                      ),
-                    ],
-                  ),
-                  const Spacer(),
-                  const CircleAvatar(
-                    backgroundColor: Color(0xFFE5EDE7),
-                    child: Icon(
-                      Icons.favorite_border,
-                      color: AppTheme.primaryColor,
+                      ],
                     ),
+                  ),
+                  Icon(
+                    isDark ? Icons.dark_mode : Icons.light_mode,
+                    color: colors.primary,
+                  ),
+                  Switch(
+                    value: themeController.isDarkMode,
+                    activeThumbColor: colors.primary,
+                    onChanged: (value) {
+                      themeController.setDarkMode(value);
+                    },
                   ),
                 ],
               ),
               const SizedBox(height: 35),
-              const Text(
+              Text(
                 'Hello there!',
-                style: TextStyle(
+                style: theme.textTheme.headlineMedium?.copyWith(
                   fontSize: 29,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF30483C),
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'Take a moment for yourself. Your feelings matter.',
-                style: TextStyle(
+                style: theme.textTheme.bodyLarge?.copyWith(
                   fontSize: 15,
-                  color: Color(0xFF78847B),
                   height: 1.5,
                 ),
               ),
@@ -244,21 +252,14 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 32),
-              const Text(
+              Text(
                 'Explore MindCheck',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF30483C),
-                ),
+                style: theme.textTheme.titleLarge?.copyWith(fontSize: 20),
               ),
               const SizedBox(height: 6),
-              const Text(
+              Text(
                 'Small steps towards a healthier mind.',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Color(0xFF78847B),
-                ),
+                style: theme.textTheme.bodyMedium?.copyWith(fontSize: 13),
               ),
               const SizedBox(height: 18),
               Row(
@@ -290,35 +291,33 @@ class HomeScreen extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(19),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE9EFE8),
+                  color: colors.secondaryContainer,
                   borderRadius: BorderRadius.circular(22),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
                     Icon(
                       Icons.self_improvement_outlined,
                       size: 38,
-                      color: AppTheme.primaryColor,
+                      color: colors.primary,
                     ),
-                    SizedBox(width: 14),
+                    const SizedBox(width: 14),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             'A gentle reminder',
-                            style: TextStyle(
+                            style: theme.textTheme.titleMedium?.copyWith(
                               fontSize: 15,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF30483C),
                             ),
                           ),
-                          SizedBox(height: 5),
+                          const SizedBox(height: 5),
                           Text(
                             'You do not have to figure everything out today. Take one small step at a time.',
-                            style: TextStyle(
+                            style: theme.textTheme.bodyMedium?.copyWith(
                               fontSize: 12,
-                              color: Color(0xFF64766A),
                               height: 1.5,
                             ),
                           ),
@@ -329,13 +328,10 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 25),
-              const Center(
+              Center(
                 child: Text(
                   'Small steps can make a difference.',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF89948C),
-                  ),
+                  style: theme.textTheme.bodySmall,
                 ),
               ),
             ],
