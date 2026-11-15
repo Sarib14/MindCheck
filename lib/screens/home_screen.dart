@@ -5,6 +5,9 @@ import '../providers/theme_controller.dart';
 import 'mood_checkin_screen.dart';
 import 'history_screen.dart';
 import 'grounding_screen.dart';
+import 'weekly_summary_screen.dart';
+import 'breathing_screen.dart';
+import 'mood_calendar_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   final ThemeController themeController;
@@ -286,6 +289,48 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ],
               ),
+const SizedBox(height: 14),
+Row(
+  children: [
+    featureCard(
+      context: context,
+      icon: Icons.insights_rounded,
+      title: 'Weekly Summary',
+      subtitle: 'Understand your mood patterns over the last 7 days.',
+      onTap: () {
+        openScreen(context, const WeeklySummaryScreen());
+      },
+    ),
+  ],
+),
+const SizedBox(height: 14),
+Row(
+  children: [
+    featureCard(
+      context: context,
+      icon: Icons.air_rounded,
+      title: 'Guided Breathing',
+      subtitle: 'Relax with a simple breathing exercise.',
+      onTap: () {
+        openScreen(context, const BreathingScreen());
+      },
+    ),
+  ],
+),
+    const SizedBox(height: 14),
+Row(
+  children: [
+    featureCard(
+      context: context,
+      icon: Icons.calendar_month_rounded,
+      title: 'Mood Calendar',
+      subtitle: 'Explore your emotional journey day by day.',
+      onTap: () {
+        openScreen(context, const MoodCalendarScreen());
+      },
+    ),
+  ],
+),
               const SizedBox(height: 25),
               Container(
                 width: double.infinity,
