@@ -1,98 +1,260 @@
 # MindCheck – Daily Mood Journal & Mental Wellness App
 
-MindCheck is an Android mental wellness application developed using Flutter and Dart. It helps users track their daily moods, maintain personal journal entries, understand emotional patterns, and practice relaxation exercises.
+MindCheck is a personal mental wellness application developed using **Flutter and Dart**. It helps users understand their emotional patterns, record daily moods, maintain personal journal entries, and practice simple mindfulness and relaxation exercises.
 
-## Technologies Used
-- Flutter
-- Dart
-- Visual Studio Code
-- Shared Preferences
-- Flutter Secure Storage
-- Cryptography (AES-256-GCM)
+The application provides a private and user-friendly environment for mood tracking and self-reflection, with locally stored and encrypted mood data.
 
-## Project Modules
+---
+
+## Project Overview
+
+| Detail | Description |
+|---|---|
+| Project Name | MindCheck |
+| Category | Mental Wellness |
+| Framework | Flutter |
+| Programming Language | Dart |
+| IDE | Visual Studio Code |
+| Version | 1.0.0 |
+
+
+## Key Features
+
+### 1. Daily Mood Check-in
+- Record your daily emotional state.
+- Select from available moods or choose a custom mood.
+- Set mood intensity.
+- Add optional personal journal notes.
+- Save entries for future reference.
+
+### 2. Mood History and Journal Management
+- View previously recorded mood entries.
+- Create, edit, and delete journal entries.
+- Search and filter mood records.
+- Access saved entries whenever needed.
+
+### 3. Secure Local Storage
+- Stores mood and journal information locally.
+- Uses AES-256-GCM encryption for stored mood data.
+- Uses Flutter Secure Storage to protect the encryption key.
+- Does not require an online account.
+
+### 4. Light and Dark Themes
+- Supports light and dark modes.
+- Saves the selected theme preference.
+- Provides a consistent visual experience.
+
+### 5. Weekly Mood Summary
+- Displays mood activity for the previous seven days.
+- Shows the total number of mood entries.
+- Identifies the most frequently recorded mood.
+- Presents mood activity through a visual chart.
+- Provides helpful reminders and empty-state messages.
+
+### 6. Guided Breathing Exercise
+- Includes a guided 4–4–6 breathing technique.
+- 4 seconds for inhaling.
+- 4 seconds for holding the breath.
+- 6 seconds for exhaling.
+- Provides Start, Pause, and Reset controls.
+- Includes an animated breathing circle and completed cycle counter.
+- Provides basic wellness tips.
+
+### 7. Monthly Mood Calendar
+- Displays recorded moods in a monthly calendar.
+- Allows navigation between previous and next months.
+- Uses colored indicators to represent moods.
+- Allows users to select a date and view its mood details.
+- Displays available intensity and journal notes.
+
+### 8. 5–4–3–2–1 Grounding Exercise
+- Provides an interactive grounding activity.
+- Guides users through five senses:
+  - 5 things you can see.
+  - 4 things you can feel.
+  - 3 things you can hear.
+  - 2 things you can smell.
+  - 1 thing you can taste.
+- Encourages mindfulness and awareness of the present moment.
+
+---
+
+## Technologies and Packages
+
+| Technology | Purpose |
+|---|---|
+| Flutter | Cross-platform application development |
+| Dart | Application programming language |
+| Visual Studio Code | Development environment |
+| Shared Preferences | Local preference and encrypted-data storage |
+| Flutter Secure Storage | Secure encryption-key storage |
+| Cryptography | AES-256-GCM encryption |
+| Flutter Test | Application testing |
+
+### Main Dependencies
+
+- `shared_preferences`
+- `flutter_secure_storage`
+- `cryptography`
+- `cupertino_icons`
+
+---
+
+## Project Structure
+
+```text
+MindCheck/
+│
+├── android/
+│
+├── lib/
+│   ├── main.dart
+│   │
+│   ├── models/
+│   │
+│   ├── providers/
+│   │
+│   ├── screens/
+│   │
+│   ├── services/
+│   │
+│   ├── theme/
+│   │
+│   └── widgets/
+│
+├── screenshots/
+│
+├── test/
+│   └── widget_test.dart
+│
+├── .github/
+│   └── workflows/
+│
+├── pubspec.yaml
+├── pubspec.lock
+├── analysis_options.yaml
+└── README.md
+```
+
+---
+
+## Internship Module Development
 
 ### Module 1 – Project Setup and UI Development
 **Duration:** October 26 – November 01, 2026
 
-- Set up and configured the Flutter project.
-- Organized project folders and Dart files.
-- Designed the application theme and basic UI.
-- Developed the welcome screen and home screen.
-- Established navigation and planned mood/journal data fields.
+- Configured the Flutter development environment.
+- Created the MindCheck Flutter project.
+- Organized the project structure.
+- Designed the application theme.
+- Developed the welcome and home screens.
+- Established screen navigation.
+- Planned the mood and journal data structure.
 - Tested the initial application on Android.
 
 ### Module 2 – Mood Tracking and Journal Management
 **Duration:** November 02 – November 08, 2026
 
-- Developed daily mood check-in and custom mood selection.
-- Added mood intensity and optional journal notes.
-- Implemented create, view, edit, and delete functionality.
-- Integrated local storage for saving and retrieving entries.
-- Added mood history with search and filtering.
+- Implemented daily mood check-ins.
+- Added custom mood selection and intensity levels.
+- Added optional journal notes.
+- Implemented create, view, edit, and delete operations.
+- Integrated local data storage.
+- Developed mood history with search and filtering.
 - Implemented persistent light and dark themes.
-- Added input validation and empty-state messages.
+- Added input validation and empty-state handling.
 
 ### Module 3 – Mood Insights and Wellness Features
 **Duration:** November 09 – November 15, 2026
 
-Module 3 focused on improving the application's mental wellness features and providing users with better ways to understand and manage their emotions.
+- Developed weekly mood summaries and visual charts.
+- Implemented guided 4–4–6 breathing exercises.
+- Added breathing animation, countdown, and controls.
+- Developed the monthly mood calendar.
+- Implemented the interactive 5–4–3–2–1 grounding exercise.
+- Improved home-screen navigation and UI consistency.
+- Added wellness tips and improved empty states.
 
-**1. Weekly Mood Summary**
-- Displays mood activity from the last seven days.
-- Shows total mood entries and the most frequently recorded mood.
-- Includes a visual weekly activity chart.
-- Retrieves saved records from local storage.
-- Provides helpful reminders and empty-state messages.
+### Module 4 – Testing and Documentation
+**Duration:** November 16 – November 22, 2026
 
-**2. Guided Breathing Exercise**
-- Implemented a guided 4–4–6 breathing technique.
-- Includes 4-second inhale, 4-second hold, and 6-second exhale phases.
-- Added countdown timer with Start, Pause, and Reset controls.
-- Includes an animated breathing circle and completed cycle counter.
-- Added a Wellness Tips section with relaxation guidance.
+- Tested application screens and major features.
+- Checked mood creation, editing, deletion, and data persistence.
+- Reviewed input validation and empty-state handling.
+- Tested application layouts and responsiveness.
+- Fixed identified bugs and improved application stability.
+- Performed Flutter code analysis.
+- Executed widget tests.
+- Prepared the Flutter Web release build.
+- Updated project documentation.
 
-**3. Mood Calendar**
-- Added a monthly calendar with previous and next month navigation.
-- Displays colored mood indicators on recorded dates.
-- Allows users to select dates and view saved mood details.
-- Shows mood intensity and available journal notes.
-- Includes a color legend for different moods.
+---
 
-**4. Grounding Exercise**
-- Added an interactive 5–4–3–2–1 grounding exercise.
-- Guides users through observing their surroundings using five senses.
-- Encourages mindfulness and emotional awareness.
+## Data Privacy and Security
 
-**5. UI and Navigation Improvements**
-- Added home-screen navigation cards for new features.
-- Improved screen layouts, spacing, and consistency.
-- Maintained the application's sage-green theme.
-- Improved error and empty-state handling.
-
-## Key Application Features
-
-- Daily mood tracking and personal journaling
-- Custom moods and intensity selection
-- Mood history, search, and filtering
-- Local encrypted data storage
-- Light and dark themes
-- Weekly mood insights
-- Guided breathing exercises and wellness tips
-- Monthly mood calendar
-- 5–4–3–2–1 grounding exercise
-
-## Data Privacy
+MindCheck is designed with a privacy-focused local storage approach.
 
 - Mood and journal records are stored locally.
-- AES-256-GCM encryption protects stored mood data.
-- Flutter Secure Storage protects the encryption key.
-- No online account is required.
+- AES-256-GCM is used to encrypt stored mood data.
+- Flutter Secure Storage is used to protect the encryption key.
+- No online account is required for the application's local features.
+- The application does not require users to upload their personal journal entries to a remote database.
+
+**Note:** Local encryption protects stored data, but users should still keep their devices secure and maintain appropriate backups.
+
+---
+
+
+### Prerequisites
+
+Install the following before running the project:
+
+- Flutter SDK
+- Dart SDK (included with Flutter)
+- Visual Studio Code
+- Flutter and Dart extensions for VS Code
+- Android Studio or an Android device/emulator (for Android testing)
+
+## Testing
+
+The following commands can be used to verify the project.
+
+**Check code quality:**
+
+```bash
+flutter analyze
+```
+
+**Run automated tests:**
+
+```bash
+flutter test
+```
+
+The project has been checked using Flutter analysis, widget testing, and a Flutter Web release build during Module 4 preparation.
+
+---
 
 ## Screenshots
 
-Application screenshots are available in the `screenshots` folder.
+Application screenshots can be added to the `screenshots/` directory.
 
-## Conclusion
+They can be viewed directly from the repository to explore the application's interface and features.
 
-The first three modules of MindCheck have successfully established a functional and user-friendly mental wellness application. The project now includes daily mood tracking, personal journaling, mood history, weekly mood insights, a monthly mood calendar, guided breathing exercises, and a grounding activity. Special attention has been given to user privacy through encrypted local storage and a simple, consistent interface. Overall, these developments have brought MindCheck closer to its goal of helping users understand their emotions and maintain better mental well-being.
+---
+
+## Project Objective
+
+The main objective of MindCheck is to provide users with a simple and private way to monitor their emotional well-being. Through daily mood tracking, journaling, mood insights, and mindfulness exercises, the application encourages self-awareness and healthy reflection.
+
+MindCheck is designed as a personal wellness companion and is not a replacement for professional mental health care.
+
+---
+
+
+**GitHub Repository:**  
+https://github.com/Sarib14/MindCheck
+
+---
+
+*MindCheck – Understand your mood. Reflect on your day. Take care of yourself.*

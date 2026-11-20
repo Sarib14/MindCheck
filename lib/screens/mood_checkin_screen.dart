@@ -1,5 +1,6 @@
-
 import 'package:flutter/material.dart';
+
+import '../models/mood_catalog.dart';
 import '../models/mood_entry.dart';
 import '../services/storage_service.dart';
 import '../theme/app_theme.dart';
@@ -18,29 +19,22 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
   bool isCustomMood = false;
 
   final TextEditingController noteController = TextEditingController();
-  final TextEditingController customMoodController =
-      TextEditingController();
+  final TextEditingController customMoodController = TextEditingController();
 
-  final List<Map<String, String>> moods = [
-    {'name': 'Happy', 'emoji': '😊'},
-    {'name': 'Calm', 'emoji': '😌'},
-    {'name': 'Excited', 'emoji': '🤩'},
-    {'name': 'Sad', 'emoji': '😔'},
-    {'name': 'Anxious', 'emoji': '😟'},
-    {'name': 'Angry', 'emoji': '😠'},
-    {'name': 'Tired', 'emoji': '😴'},
-  ];
+  final List<String> moods = MoodCatalog.defaultMoods;
 
   Future<void> saveMood() async {
     if (isSaving) return;
 
+    // Grab these before any await so we never use a stale context.
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
     final customMood = customMoodController.text.trim();
 
     if (isCustomMood && customMood.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter your custom mood.'),
-        ),
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Please enter your custom mood.')),
       );
       return;
     }
@@ -48,7 +42,7 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
     final moodName = isCustomMood ? customMood : selectedMood;
 
     if (moodName.length > 40) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         const SnackBar(
           content: Text('Mood name must be 40 characters or fewer.'),
         ),
@@ -72,25 +66,21 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
 
       if (!mounted) return;
 
-      Navigator.pop(context, true);
+      navigator.pop(true);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Mood saved successfully!'),
-          backgroundColor: AppTheme.primaryColor,
-        ),
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Mood saved successfully!')),
       );
-    } catch (error) {
+    } catch (_) {
       if (!mounted) return;
 
       setState(() {
         isSaving = false;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         const SnackBar(
           content: Text('Unable to save mood. Please try again.'),
-          backgroundColor: Colors.redAccent,
         ),
       );
     }
@@ -103,37 +93,55 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
     super.dispose();
   }
 
+  Widget _card({required Widget child}) {
+    final p = context.palette;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: p.surface,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: p.border),
+        boxShadow: [
+          BoxShadow(
+            color: p.shadow,
+            blurRadius: 12,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colors = theme.colorScheme;
+    final p = context.palette;
+    final intensity = moodIntensity.round();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mood Check-in'),
-      ),
+      appBar: AppBar(title: const Text('Mood Check-in')),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 30),
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 30),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // ---------- Intro ----------
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(22),
                 decoration: BoxDecoration(
-                  color: colors.secondaryContainer,
+                  color: p.surfaceAlt,
                   borderRadius: BorderRadius.circular(24),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      Icons.favorite_outline,
-                      color: colors.primary,
-                      size: 32,
-                    ),
-                    const SizedBox(height: 15),
+                    Icon(Icons.favorite_outline, color: p.primary, size: 32),
+                    const SizedBox(height: 14),
                     Text(
                       'Your feelings matter.',
                       style: theme.textTheme.headlineMedium?.copyWith(
@@ -143,45 +151,39 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
                     const SizedBox(height: 8),
                     Text(
                       'Take a moment to understand how you are feeling today. There are no right or wrong answers.',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        height: 1.5,
-                      ),
+                      style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 28),
-              Text(
-                'How are you feeling?',
-                style: theme.textTheme.titleLarge,
-              ),
-              const SizedBox(height: 7),
+
+              // ---------- Mood picker ----------
+              Text('How are you feeling?', style: theme.textTheme.titleLarge),
+              const SizedBox(height: 6),
               Text(
                 'Choose the mood that describes you best.',
                 style: theme.textTheme.bodyMedium,
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 16),
               GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: moods.length + 1,
-                gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 3,
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
-                  childAspectRatio: 1.05,
+                  childAspectRatio: 0.95,
                 ),
                 itemBuilder: (context, index) {
                   final isCustomTile = index == moods.length;
-
-                  final mood = isCustomTile
-                      ? {'name': 'Custom', 'emoji': '✨'}
-                      : moods[index];
+                  final name = isCustomTile ? 'Custom' : moods[index];
+                  final emoji = isCustomTile ? '✨' : MoodCatalog.emoji(name);
 
                   final isSelected = isCustomTile
                       ? isCustomMood
-                      : !isCustomMood && selectedMood == mood['name'];
+                      : !isCustomMood && selectedMood == name;
 
                   return InkWell(
                     onTap: () {
@@ -189,7 +191,7 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
                         isCustomMood = isCustomTile;
 
                         if (!isCustomTile) {
-                          selectedMood = mood['name']!;
+                          selectedMood = name;
                         }
                       });
                     },
@@ -197,38 +199,35 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
                       decoration: BoxDecoration(
-                        color: isSelected
-                            ? colors.secondaryContainer
-                            : theme.cardColor,
+                        color: isSelected ? p.surfaceAlt : p.surface,
                         borderRadius: BorderRadius.circular(18),
                         border: Border.all(
-                          color: isSelected
-                              ? colors.primary
-                              : colors.outlineVariant,
-                          width: isSelected ? 1.8 : 0.8,
+                          color: isSelected ? p.primary : p.border,
+                          width: isSelected ? 1.8 : 1,
                         ),
                       ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
+                          Text(emoji, style: const TextStyle(fontSize: 30)),
+                          const SizedBox(height: 6),
                           Text(
-                            mood['emoji']!,
-                            style: const TextStyle(fontSize: 31),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            mood['name']!,
+                            name,
                             style: theme.textTheme.bodyMedium?.copyWith(
                               fontWeight: isSelected
-                                  ? FontWeight.bold
+                                  ? FontWeight.w700
                                   : FontWeight.w500,
+                              color: isSelected ? p.heading : p.body,
                             ),
                           ),
                           if (isSelected)
-                            Icon(
-                              Icons.check_circle,
-                              color: colors.primary,
-                              size: 16,
+                            Padding(
+                              padding: const EdgeInsets.only(top: 3),
+                              child: Icon(
+                                Icons.check_circle,
+                                color: p.primary,
+                                size: 15,
+                              ),
                             ),
                         ],
                       ),
@@ -238,12 +237,7 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
               ),
               if (isCustomMood) ...[
                 const SizedBox(height: 20),
-                Text(
-                  'Enter your mood',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                Text('Enter your mood', style: theme.textTheme.titleMedium),
                 const SizedBox(height: 10),
                 TextField(
                   controller: customMoodController,
@@ -255,37 +249,37 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
                   ),
                 ),
               ],
-              const SizedBox(height: 28),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: theme.cardColor,
-                  borderRadius: BorderRadius.circular(22),
-                ),
+              const SizedBox(height: 26),
+
+              // ---------- Intensity ----------
+              _card(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Intensity of your feeling',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: theme.textTheme.titleMedium,
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     Text(
                       'How strongly are you experiencing this mood?',
                       style: theme.textTheme.bodySmall,
                     ),
-                    const SizedBox(height: 15),
+                    const SizedBox(height: 14),
                     Center(
                       child: Text(
-                        '${moodIntensity.round()} / 5',
+                        '$intensity / 5',
                         style: TextStyle(
-                          fontSize: 27,
-                          fontWeight: FontWeight.bold,
-                          color: colors.primary,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w700,
+                          color: p.primary,
                         ),
+                      ),
+                    ),
+                    Center(
+                      child: Text(
+                        MoodCatalog.intensityLabel(intensity),
+                        style: theme.textTheme.bodyMedium,
                       ),
                     ),
                     Slider(
@@ -293,7 +287,7 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
                       min: 1,
                       max: 5,
                       divisions: 4,
-                      label: moodIntensity.round().toString(),
+                      label: intensity.toString(),
                       onChanged: (value) {
                         setState(() {
                           moodIntensity = value;
@@ -310,33 +304,28 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 25),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: theme.cardColor,
-                  borderRadius: BorderRadius.circular(22),
-                ),
+              const SizedBox(height: 22),
+
+              // ---------- Journal ----------
+              _card(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Write about your feelings',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: theme.textTheme.titleMedium,
                     ),
-                    const SizedBox(height: 7),
+                    const SizedBox(height: 6),
                     Text(
                       'This is your private space. Share anything on your mind.',
                       style: theme.textTheme.bodySmall,
                     ),
-                    const SizedBox(height: 15),
+                    const SizedBox(height: 14),
                     TextField(
                       controller: noteController,
                       maxLines: 5,
                       maxLength: 500,
+                      textCapitalization: TextCapitalization.sentences,
                       decoration: const InputDecoration(
                         hintText: 'Write something about your day...',
                       ),
@@ -344,18 +333,20 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 26),
+
+              // ---------- Save ----------
               SizedBox(
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
                   onPressed: isSaving ? null : saveMood,
                   child: isSaving
-                      ? const SizedBox(
+                      ? SizedBox(
                           height: 23,
                           width: 23,
                           child: CircularProgressIndicator(
-                            color: Colors.white,
+                            color: p.onPrimary,
                             strokeWidth: 2,
                           ),
                         )
@@ -369,7 +360,7 @@ class _MoodCheckinScreenState extends State<MoodCheckinScreen> {
                         ),
                 ),
               ),
-              const SizedBox(height: 15),
+              const SizedBox(height: 14),
               Center(
                 child: Text(
                   'Your wellbeing journey starts with one small step.',

@@ -1,5 +1,6 @@
-
 import 'package:flutter/material.dart';
+
+import '../models/mood_catalog.dart';
 import '../models/mood_entry.dart';
 import '../services/storage_service.dart';
 import '../theme/app_theme.dart';
@@ -22,11 +23,11 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
   final List<String> monthNames = [
     'January', 'February', 'March', 'April',
     'May', 'June', 'July', 'August',
-    'September', 'October', 'November', 'December'
+    'September', 'October', 'November', 'December',
   ];
 
   final List<String> weekdays = [
-    'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'
+    'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun',
   ];
 
   @override
@@ -66,26 +67,6 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
     }).toList();
   }
 
-  Color moodColor(String mood) {
-    switch (mood.toLowerCase()) {
-      case 'happy':
-      case 'excited':
-        return const Color(0xFFE8B95D);
-      case 'calm':
-        return const Color(0xFF79A88B);
-      case 'sad':
-        return const Color(0xFF7E9DC2);
-      case 'anxious':
-        return const Color(0xFFB39BCB);
-      case 'angry':
-        return const Color(0xFFD98279);
-      case 'tired':
-        return const Color(0xFF9B9DA8);
-      default:
-        return AppTheme.primaryColor;
-    }
-  }
-
   void changeMonth(int amount) {
     setState(() {
       displayedMonth = DateTime(
@@ -97,15 +78,36 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
     });
   }
 
+  void goToToday() {
+    final now = DateTime.now();
+
+    setState(() {
+      displayedMonth = now;
+      selectedDate = now;
+    });
+  }
+
+  String _time(DateTime date) {
+    final hour = date.hour.toString().padLeft(2, '0');
+    final minute = date.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final p = context.palette;
+
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
         title: const Text('Mood Calendar'),
-        backgroundColor: AppTheme.backgroundColor,
-        foregroundColor: AppTheme.headingColor,
-        elevation: 0,
+        actions: [
+          IconButton(
+            tooltip: 'Jump to today',
+            onPressed: goToToday,
+            icon: const Icon(Icons.today_rounded),
+          ),
+        ],
       ),
       body: SafeArea(
         child: isLoading
@@ -115,7 +117,10 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(errorMessage!),
+                        Text(
+                          errorMessage!,
+                          style: theme.textTheme.bodyMedium,
+                        ),
                         const SizedBox(height: 12),
                         ElevatedButton(
                           onPressed: () {
@@ -130,16 +135,24 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
                     ),
                   )
                 : SingleChildScrollView(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.all(20),
+                          padding: const EdgeInsets.all(18),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: p.surface,
                             borderRadius: BorderRadius.circular(24),
+                            border: Border.all(color: p.border),
+                            boxShadow: [
+                              BoxShadow(
+                                color: p.shadow,
+                                blurRadius: 14,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
                           ),
                           child: Column(
                             children: [
@@ -148,53 +161,61 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   IconButton(
+                                    tooltip: 'Previous month',
                                     onPressed: () => changeMonth(-1),
-                                    icon: const Icon(Icons.chevron_left),
+                                    style: IconButton.styleFrom(
+                                      backgroundColor: p.surfaceAlt,
+                                      foregroundColor: p.primary,
+                                    ),
+                                    icon: const Icon(
+                                      Icons.chevron_left_rounded,
+                                    ),
                                   ),
                                   Text(
                                     '${monthNames[displayedMonth.month - 1]} ${displayedMonth.year}',
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppTheme.headingColor,
-                                    ),
+                                    style: theme.textTheme.titleLarge
+                                        ?.copyWith(fontSize: 18),
                                   ),
                                   IconButton(
+                                    tooltip: 'Next month',
                                     onPressed: () => changeMonth(1),
-                                    icon: const Icon(Icons.chevron_right),
+                                    style: IconButton.styleFrom(
+                                      backgroundColor: p.surfaceAlt,
+                                      foregroundColor: p.primary,
+                                    ),
+                                    icon: const Icon(
+                                      Icons.chevron_right_rounded,
+                                    ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 18),
+                              const SizedBox(height: 16),
                               Row(
                                 children: weekdays.map((day) {
                                   return Expanded(
                                     child: Center(
                                       child: Text(
                                         day,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 11,
-                                          fontWeight: FontWeight.bold,
-                                          color: AppTheme.textColor,
+                                          fontWeight: FontWeight.w700,
+                                          color: p.muted,
                                         ),
                                       ),
                                     ),
                                   );
                                 }).toList(),
                               ),
-                              const SizedBox(height: 12),
+                              const SizedBox(height: 10),
                               buildCalendarGrid(),
                             ],
                           ),
                         ),
                         const SizedBox(height: 24),
-                        const Text(
+                        Text(
                           'Mood activity',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.headingColor,
-                          ),
+                          style: theme.textTheme.titleLarge
+                              ?.copyWith(fontSize: 20),
                         ),
                         const SizedBox(height: 12),
                         buildSelectedDay(),
@@ -208,11 +229,9 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
   }
 
   Widget buildCalendarGrid() {
-    final firstDay = DateTime(
-      displayedMonth.year,
-      displayedMonth.month,
-      1,
-    );
+    final p = context.palette;
+
+    final firstDay = DateTime(displayedMonth.year, displayedMonth.month, 1);
 
     final daysInMonth = DateTime(
       displayedMonth.year,
@@ -259,12 +278,10 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
           borderRadius: BorderRadius.circular(12),
           child: Container(
             decoration: BoxDecoration(
-              color: isSelected
-                  ? AppTheme.accentColor
-                  : Colors.transparent,
+              color: isSelected ? p.surfaceAlt : Colors.transparent,
               borderRadius: BorderRadius.circular(12),
               border: isToday
-                  ? Border.all(color: AppTheme.primaryColor)
+                  ? Border.all(color: p.primary, width: 1.4)
                   : null,
             ),
             child: Column(
@@ -275,8 +292,8 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight:
-                        isSelected ? FontWeight.bold : FontWeight.normal,
-                    color: AppTheme.headingColor,
+                        isSelected || isToday ? FontWeight.w700 : FontWeight.w400,
+                    color: p.heading,
                   ),
                 ),
                 const SizedBox(height: 5),
@@ -290,7 +307,7 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
                         margin: const EdgeInsets.symmetric(horizontal: 1),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: moodColor(entry.mood),
+                          color: MoodCatalog.color(entry.mood),
                         ),
                       );
                     }).toList(),
@@ -306,42 +323,39 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
   }
 
   Widget buildSelectedDay() {
+    final theme = Theme.of(context);
+    final p = context.palette;
     final dayEntries = entriesForDate(selectedDate);
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: p.surface,
         borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: p.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             '${selectedDate.day} ${monthNames[selectedDate.month - 1]} ${selectedDate.year}',
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.headingColor,
-            ),
+            style: theme.textTheme.titleMedium,
           ),
           const SizedBox(height: 14),
           if (dayEntries.isEmpty)
-            const Text(
+            Text(
               'No mood recorded on this day. Every day is a fresh opportunity to check in with yourself.',
-              style: TextStyle(
-                color: AppTheme.textColor,
-                height: 1.5,
-              ),
+              style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
             )
           else
             ...dayEntries.map((entry) {
               return Container(
+                width: double.infinity,
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(13),
                 decoration: BoxDecoration(
-                  color: AppTheme.backgroundColor,
+                  color: p.background,
                   borderRadius: BorderRadius.circular(15),
                 ),
                 child: Row(
@@ -353,7 +367,7 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
                       margin: const EdgeInsets.only(top: 5),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: moodColor(entry.mood),
+                        color: MoodCatalog.color(entry.mood),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -362,26 +376,19 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            entry.mood,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.headingColor,
-                            ),
+                            '${MoodCatalog.emoji(entry.mood)} ${entry.mood}',
+                            style: theme.textTheme.titleSmall,
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Intensity: ${entry.intensity}/5',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppTheme.textColor,
-                            ),
+                            'Intensity: ${entry.intensity}/5 · ${_time(entry.date)}',
+                            style: theme.textTheme.bodySmall,
                           ),
                           if (entry.note.isNotEmpty) ...[
                             const SizedBox(height: 7),
                             Text(
                               entry.note,
-                              style: const TextStyle(
-                                color: AppTheme.textColor,
+                              style: theme.textTheme.bodyMedium?.copyWith(
                                 height: 1.4,
                               ),
                             ),
@@ -399,22 +406,26 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
   }
 
   Widget buildLegend() {
-    final colors = [
-      moodColor('Happy'),
-      moodColor('Calm'),
-      moodColor('Sad'),
-      moodColor('Anxious'),
-      moodColor('Angry'),
-      moodColor('Tired'),
+    final theme = Theme.of(context);
+
+    const names = [
+      'Happy / Excited',
+      'Calm',
+      'Sad',
+      'Anxious',
+      'Angry',
+      'Tired',
+      'Custom',
     ];
 
-    final names = [
+    const colorKeys = [
       'Happy',
       'Calm',
       'Sad',
       'Anxious',
       'Angry',
       'Tired',
+      'Custom',
     ];
 
     return Wrap(
@@ -425,20 +436,17 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 9,
-              height: 9,
+              width: 10,
+              height: 10,
               decoration: BoxDecoration(
-                color: colors[index],
+                color: MoodCatalog.color(colorKeys[index]),
                 shape: BoxShape.circle,
               ),
             ),
-            const SizedBox(width: 5),
+            const SizedBox(width: 6),
             Text(
               names[index],
-              style: const TextStyle(
-                fontSize: 11,
-                color: AppTheme.textColor,
-              ),
+              style: theme.textTheme.bodyMedium?.copyWith(fontSize: 12),
             ),
           ],
         );

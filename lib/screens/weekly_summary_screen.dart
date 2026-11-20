@@ -1,35 +1,57 @@
-
 import 'package:flutter/material.dart';
+
+import '../models/mood_catalog.dart';
 import '../models/mood_entry.dart';
 import '../services/storage_service.dart';
 import '../theme/app_theme.dart';
 
-class WeeklySummaryScreen extends StatelessWidget {
+class WeeklySummaryScreen extends StatefulWidget {
   const WeeklySummaryScreen({super.key});
 
-  DateTime getStartDate() {
-    final today = DateTime.now();
-    final date = DateTime(today.year, today.month, today.day);
-    return date.subtract(const Duration(days: 6));
+  @override
+  State<WeeklySummaryScreen> createState() => _WeeklySummaryScreenState();
+}
+
+class _WeeklySummaryScreenState extends State<WeeklySummaryScreen> {
+  // The future is created once, so rebuilding (for example when the theme
+  // changes) does not reload everything from storage.
+  late Future<List<MoodEntry>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = StorageService.getMoods();
   }
 
-  List<MoodEntry> getWeeklyMoods(List<MoodEntry> moods) {
-    final startDate = getStartDate();
-    final today = DateTime.now();
+  void _reload() {
+    setState(() {
+      _future = StorageService.getMoods();
+    });
+  }
 
-    return moods.where((entry) {
-      final date = DateTime(
-        entry.date.year,
-        entry.date.month,
-        entry.date.day,
-      );
+  DateTime _startDate() {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day - 6);
+  }
 
-      return !date.isBefore(startDate) &&
-          !date.isAfter(DateTime(today.year, today.month, today.day));
+  /// 0 = six days ago ... 6 = today. Uses UTC maths so daylight-saving
+  /// changes can never shift an entry into the wrong day.
+  int _dayIndex(DateTime date) {
+    final start = _startDate();
+
+    return DateTime.utc(date.year, date.month, date.day)
+        .difference(DateTime.utc(start.year, start.month, start.day))
+        .inDays;
+  }
+
+  List<MoodEntry> _weeklyMoods(List<MoodEntry> all) {
+    return all.where((entry) {
+      final index = _dayIndex(entry.date);
+      return index >= 0 && index < 7;
     }).toList();
   }
 
-  String getMostFrequentMood(List<MoodEntry> moods) {
+  String _mostFrequentMood(List<MoodEntry> moods) {
     if (moods.isEmpty) return 'Not available';
 
     final counts = <String, int>{};
@@ -44,153 +66,115 @@ class WeeklySummaryScreen extends StatelessWidget {
     return sorted.first.key;
   }
 
-  String getEmoji(String mood) {
-    switch (mood) {
-      case 'Happy':
-        return '😊';
-      case 'Calm':
-        return '😌';
-      case 'Excited':
-        return '🤩';
-      case 'Sad':
-        return '😔';
-      case 'Anxious':
-        return '😟';
-      case 'Angry':
-        return '😠';
-      case 'Tired':
-        return '😴';
-      default:
-        return '💚';
-    }
-  }
+  Widget _statCard(String title, String value, IconData icon) {
+    final theme = Theme.of(context);
+    final p = context.palette;
 
-  Widget buildStatCard(String title, String value, IconData icon) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(19),
+          color: p.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: p.border),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: AppTheme.primaryColor, size: 25),
-            const SizedBox(height: 13),
+            Icon(icon, color: p.primary, size: 25),
+            const SizedBox(height: 12),
             Text(
               value,
-              style: const TextStyle(
-                fontSize: 21,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF30483C),
-              ),
+              style: theme.textTheme.titleLarge?.copyWith(fontSize: 22),
             ),
-            const SizedBox(height: 5),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 11,
-                color: Color(0xFF78847B),
-              ),
-            ),
+            const SizedBox(height: 4),
+            Text(title, style: theme.textTheme.bodySmall),
           ],
         ),
       ),
     );
   }
 
-  Widget buildWeeklyChart(List<MoodEntry> moods) {
+  Widget _buildWeeklyChart(List<MoodEntry> moods) {
+    final theme = Theme.of(context);
+    final p = context.palette;
 
-    final startDate = getStartDate();
-
+    final startDate = _startDate();
     final dailyCounts = List<int>.filled(7, 0);
 
     for (final entry in moods) {
-      final date = DateTime(
-        entry.date.year,
-        entry.date.month,
-        entry.date.day,
-      );
-
-      final index = date.difference(startDate).inDays;
+      final index = _dayIndex(entry.date);
 
       if (index >= 0 && index < 7) {
         dailyCounts[index]++;
       }
     }
 
-    final highestCount = dailyCounts.reduce(
-      (a, b) => a > b ? a : b,
-    );
+    final highestCount = dailyCounts.reduce((a, b) => a > b ? a : b);
+    const weekdayLetters = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: p.surface,
         borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: p.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Your activity',
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF30483C),
-            ),
+            style: theme.textTheme.titleMedium?.copyWith(fontSize: 17),
           ),
-          const SizedBox(height: 5),
-          const Text(
+          const SizedBox(height: 4),
+          Text(
             'Mood check-ins over the last 7 days',
-            style: TextStyle(
-              fontSize: 12,
-              color: Color(0xFF78847B),
-            ),
+            style: theme.textTheme.bodySmall,
           ),
-          const SizedBox(height: 25),
+          const SizedBox(height: 22),
           SizedBox(
-            height: 125,
+            height: 130,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: List.generate(7, (index) {
-                final date = startDate.add(Duration(days: index));
+                final date = DateTime(
+                  startDate.year,
+                  startDate.month,
+                  startDate.day + index,
+                );
                 final count = dailyCounts[index];
+                final isToday = index == 6;
 
-                final barHeight = highestCount == 0
-                    ? 8.0
-                    : (count / highestCount) * 75;
+                final barHeight =
+                    count == 0 ? 6.0 : 14.0 + (count / highestCount) * 60;
 
                 return Expanded(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      Text(
-                        '$count',
-                        style: const TextStyle(
-                          fontSize: 10,
-                          color: Color(0xFF78847B),
-                        ),
-                      ),
-                      const SizedBox(height: 7),
+                      Text('$count', style: theme.textTheme.bodySmall),
+                      const SizedBox(height: 6),
                       Container(
                         height: barHeight,
-                        width: 19,
+                        width: 20,
                         decoration: BoxDecoration(
                           color: count == 0
-                              ? const Color(0xFFE5EDE7)
-                              : AppTheme.primaryColor,
-                          borderRadius: BorderRadius.circular(9),
+                              ? p.border
+                              : (isToday
+                                  ? p.primary
+                                  : p.primary.withValues(alpha: 0.7)),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      const SizedBox(height: 9),
+                      const SizedBox(height: 8),
                       Text(
-                        const ['M', 'T', 'W', 'T', 'F', 'S', 'S']
-                            [date.weekday - 1],
-                        style: const TextStyle(
+                        weekdayLetters[date.weekday - 1],
+                        style: TextStyle(
                           fontSize: 11,
-                          color: Color(0xFF78847B),
+                          color: isToday ? p.primary : p.muted,
+                          fontWeight:
+                              isToday ? FontWeight.w700 : FontWeight.w400,
                         ),
                       ),
                     ],
@@ -204,50 +188,54 @@ class WeeklySummaryScreen extends StatelessWidget {
     );
   }
 
-  Widget buildContent(List<MoodEntry> allMoods) {
-    final moods = getWeeklyMoods(allMoods);
+  Widget _buildContent(List<MoodEntry> allMoods) {
+    final theme = Theme.of(context);
+    final p = context.palette;
+
+    final moods = _weeklyMoods(allMoods);
 
     final averageIntensity = moods.isEmpty
-    ? 0.0
-    : moods.fold<double>(
-        0.0,
-        (total, entry) => total + entry.intensity,
-      ) /
-      moods.length;
+        ? 0.0
+        : moods.fold<double>(
+              0.0,
+              (total, entry) => total + entry.intensity,
+            ) /
+            moods.length;
 
-    final frequentMood = getMostFrequentMood(moods);
+    final frequentMood = _mostFrequentMood(moods);
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 15, 20, 30),
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 30),
       children: [
+        // ---------- Hero ----------
         Container(
           padding: const EdgeInsets.all(23),
           decoration: BoxDecoration(
-            color: AppTheme.primaryColor,
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [p.heroStart, p.heroEnd],
+            ),
             borderRadius: BorderRadius.circular(24),
           ),
-          child: const Column(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(
-                Icons.insights_rounded,
-                color: Colors.white,
-                size: 32,
-              ),
-              SizedBox(height: 16),
+              Icon(Icons.insights_rounded, color: p.onHero, size: 32),
+              const SizedBox(height: 14),
               Text(
                 'Your week, in reflection',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: p.onHero,
                   fontSize: 21,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               Text(
                 'Take a gentle look at your emotional journey. Every feeling deserves attention.',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: p.onHero.withValues(alpha: 0.92),
                   fontSize: 13,
                   height: 1.5,
                 ),
@@ -255,28 +243,33 @@ class WeeklySummaryScreen extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 22),
+        const SizedBox(height: 20),
+
+        // ---------- Stats ----------
         Row(
           children: [
-            buildStatCard(
+            _statCard(
               'Check-ins',
               '${moods.length}',
               Icons.edit_calendar_rounded,
             ),
             const SizedBox(width: 13),
-            buildStatCard(
+            _statCard(
               'Average intensity',
               moods.isEmpty ? '--' : averageIntensity.toStringAsFixed(1),
               Icons.show_chart_rounded,
             ),
           ],
         ),
-        const SizedBox(height: 15),
+        const SizedBox(height: 14),
+
+        // ---------- Most frequent mood ----------
         Container(
-          padding: const EdgeInsets.all(19),
+          padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: p.surface,
             borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: p.border),
           ),
           child: Row(
             children: [
@@ -285,11 +278,11 @@ class WeeklySummaryScreen extends StatelessWidget {
                 height: 52,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE5EDE7),
+                  color: p.surfaceAlt,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Text(
-                  moods.isEmpty ? '💚' : getEmoji(frequentMood),
+                  moods.isEmpty ? '💚' : MoodCatalog.emoji(frequentMood),
                   style: const TextStyle(fontSize: 27),
                 ),
               ),
@@ -298,20 +291,15 @@ class WeeklySummaryScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Most frequent mood',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF78847B),
-                      ),
+                      style: theme.textTheme.bodySmall,
                     ),
-                    const SizedBox(height: 5),
+                    const SizedBox(height: 4),
                     Text(
                       frequentMood,
-                      style: const TextStyle(
+                      style: theme.textTheme.titleMedium?.copyWith(
                         fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF30483C),
                       ),
                     ),
                   ],
@@ -320,32 +308,28 @@ class WeeklySummaryScreen extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 22),
-        buildWeeklyChart(moods),
-        const SizedBox(height: 22),
+        const SizedBox(height: 20),
+
+        _buildWeeklyChart(moods),
+        const SizedBox(height: 20),
+
+        // ---------- Reminder ----------
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: const Color(0xFFE5EDE7),
+            color: p.surfaceAlt,
             borderRadius: BorderRadius.circular(21),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Row(
+              Row(
                 children: [
-                  Icon(
-                    Icons.favorite_outline_rounded,
-                    color: AppTheme.primaryColor,
-                  ),
-                  SizedBox(width: 9),
+                  Icon(Icons.favorite_outline_rounded, color: p.primary),
+                  const SizedBox(width: 9),
                   Text(
                     'A gentle reminder',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF30483C),
-                    ),
+                    style: theme.textTheme.titleMedium,
                   ),
                 ],
               ),
@@ -354,10 +338,9 @@ class WeeklySummaryScreen extends StatelessWidget {
                 moods.isEmpty
                     ? 'Your weekly story has not started yet. Add a mood check-in whenever you feel ready.'
                     : 'You recorded ${moods.length} check-ins this week. Take time to appreciate your effort and keep making space for your feelings.',
-                style: const TextStyle(
+                style: theme.textTheme.bodyMedium?.copyWith(
                   fontSize: 13,
                   height: 1.6,
-                  color: Color(0xFF64766A),
                 ),
               ),
             ],
@@ -370,48 +353,38 @@ class WeeklySummaryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7F2),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFF5F7F2),
-        elevation: 0,
-        iconTheme: const IconThemeData(
-          color: Color(0xFF30483C),
-        ),
-        title: const Text(
-          'Weekly Summary',
-          style: TextStyle(
-            color: Color(0xFF30483C),
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
+      appBar: AppBar(title: const Text('Weekly Summary')),
       body: FutureBuilder<List<MoodEntry>>(
-        future: StorageService.getMoods(),
+        future: _future,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(
-                color: AppTheme.primaryColor,
-              ),
-            );
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.hasError) {
-            return const Center(
+            return Center(
               child: Padding(
-                padding: EdgeInsets.all(25),
-                child: Text(
-                  'Unable to prepare your weekly summary. Please try again.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Color(0xFF78847B),
-                  ),
+                padding: const EdgeInsets.all(25),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Unable to prepare your weekly summary. Please try again.',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 14),
+                    ElevatedButton(
+                      onPressed: _reload,
+                      child: const Text('Try Again'),
+                    ),
+                  ],
                 ),
               ),
             );
           }
 
-          return buildContent(snapshot.data ?? []);
+          return _buildContent(snapshot.data ?? []);
         },
       ),
     );

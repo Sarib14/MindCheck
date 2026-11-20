@@ -1,13 +1,13 @@
-
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
+
 import '../providers/theme_controller.dart';
-import 'mood_checkin_screen.dart';
-import 'history_screen.dart';
-import 'grounding_screen.dart';
-import 'weekly_summary_screen.dart';
+import '../theme/app_theme.dart';
 import 'breathing_screen.dart';
+import 'grounding_screen.dart';
+import 'history_screen.dart';
 import 'mood_calendar_screen.dart';
+import 'mood_checkin_screen.dart';
+import 'weekly_summary_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   final ThemeController themeController;
@@ -17,82 +17,25 @@ class HomeScreen extends StatelessWidget {
     required this.themeController,
   });
 
-  void openScreen(BuildContext context, Widget screen) {
+  void _open(BuildContext context, Widget screen) {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => screen),
     );
   }
 
-  Widget featureCard({
-    required BuildContext context,
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
+  String _greeting() {
+    final hour = DateTime.now().hour;
 
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(22),
-        child: Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: theme.cardColor,
-            borderRadius: BorderRadius.circular(22),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 12,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: colors.secondaryContainer,
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: Icon(
-                  icon,
-                  color: colors.primary,
-                  size: 27,
-                ),
-              ),
-              const SizedBox(height: 18),
-              Text(
-                title,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                subtitle,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontSize: 12,
-                  height: 1.4,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colors = theme.colorScheme;
+    final p = context.palette;
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
@@ -102,17 +45,18 @@ class HomeScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // ---------- Header ----------
               Row(
                 children: [
                   Container(
                     padding: const EdgeInsets.all(11),
                     decoration: BoxDecoration(
-                      color: colors.secondaryContainer,
+                      color: p.surfaceAlt,
                       borderRadius: BorderRadius.circular(15),
                     ),
                     child: Icon(
                       Icons.spa_outlined,
-                      color: colors.primary,
+                      color: p.primary,
                       size: 28,
                     ),
                   ),
@@ -125,7 +69,6 @@ class HomeScreen extends StatelessWidget {
                           'MindCheck',
                           style: theme.textTheme.titleLarge?.copyWith(
                             fontSize: 21,
-                            fontWeight: FontWeight.bold,
                           ),
                         ),
                         Text(
@@ -135,208 +78,216 @@ class HomeScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-                  Icon(
-                    isDark ? Icons.dark_mode : Icons.light_mode,
-                    color: colors.primary,
-                  ),
-                  Switch(
-                    value: themeController.isDarkMode,
-                    activeThumbColor: colors.primary,
-                    onChanged: (value) {
-                      themeController.setDarkMode(value);
+                  IconButton(
+                    tooltip: isDark
+                        ? 'Switch to light mode'
+                        : 'Switch to dark mode',
+                    onPressed: () {
+                      themeController.setDarkMode(!themeController.isDarkMode);
                     },
+                    style: IconButton.styleFrom(
+                      backgroundColor: p.surfaceAlt,
+                      foregroundColor: p.primary,
+                    ),
+                    icon: Icon(
+                      isDark
+                          ? Icons.light_mode_outlined
+                          : Icons.dark_mode_outlined,
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 35),
+              const SizedBox(height: 32),
+
+              // ---------- Greeting ----------
               Text(
-                'Hello there!',
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  fontSize: 29,
-                ),
+                _greeting(),
+                style: theme.textTheme.headlineMedium?.copyWith(fontSize: 29),
               ),
               const SizedBox(height: 8),
               Text(
                 'Take a moment for yourself. Your feelings matter.',
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  fontSize: 15,
-                  height: 1.5,
-                ),
+                style: theme.textTheme.bodyLarge?.copyWith(fontSize: 15),
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 26),
+
+              // ---------- Hero card ----------
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(23),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [p.heroStart, p.heroEnd],
+                  ),
                   borderRadius: BorderRadius.circular(28),
                   boxShadow: [
                     BoxShadow(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.20),
-                      blurRadius: 18,
-                      offset: const Offset(0, 8),
+                      color: p.heroEnd.withValues(alpha: 0.28),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
                     ),
                   ],
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Row(
-                      children: [
-                        Icon(
-                          Icons.wb_sunny_outlined,
-                          color: Colors.white,
-                          size: 23,
-                        ),
-                        SizedBox(width: 9),
-                        Text(
-                          'A moment for you',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(28),
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        right: -36,
+                        top: -36,
+                        child: Container(
+                          width: 140,
+                          height: 140,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: p.onHero.withValues(alpha: 0.08),
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    const Text(
-                      'How are you feeling today?',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 23,
-                        fontWeight: FontWeight.bold,
-                        height: 1.3,
                       ),
-                    ),
-                    const SizedBox(height: 9),
-                    const Text(
-                      'Check in with your emotions and give yourself space to reflect.',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        height: 1.5,
-                      ),
-                    ),
-                    const SizedBox(height: 22),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          openScreen(
-                            context,
-                            const MoodCheckinScreen(),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: AppTheme.primaryColor,
-                          padding: const EdgeInsets.symmetric(vertical: 15),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15),
+                      Positioned(
+                        right: 40,
+                        bottom: -50,
+                        child: Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: p.onHero.withValues(alpha: 0.06),
                           ),
                         ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Start Mood Check-in',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.wb_sunny_outlined,
+                                    color: p.onHero,
+                                    size: 22,
+                                  ),
+                                  const SizedBox(width: 9),
+                                  Text(
+                                    'A moment for you',
+                                    style: TextStyle(
+                                      color: p.onHero,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
-                            SizedBox(width: 9),
-                            Icon(Icons.arrow_forward_rounded, size: 19),
-                          ],
+                              const SizedBox(height: 18),
+                              Text(
+                                'How are you feeling today?',
+                                style: TextStyle(
+                                  color: p.onHero,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.3,
+                                ),
+                              ),
+                              const SizedBox(height: 9),
+                              Text(
+                                'Check in with your emotions and give yourself space to reflect.',
+                                style: TextStyle(
+                                  color: p.onHero.withValues(alpha: 0.92),
+                                  fontSize: 14,
+                                  height: 1.5,
+                                ),
+                              ),
+                              const SizedBox(height: 22),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    _open(context, const MoodCheckinScreen());
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: p.onHero,
+                                    foregroundColor: p.heroEnd,
+                                  ),
+                                  child: const Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text('Start Mood Check-in'),
+                                      SizedBox(width: 9),
+                                      Icon(Icons.arrow_forward_rounded, size: 19),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 32),
+
+              // ---------- Explore ----------
               Text(
                 'Explore MindCheck',
                 style: theme.textTheme.titleLarge?.copyWith(fontSize: 20),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 4),
               Text(
                 'Small steps towards a healthier mind.',
                 style: theme.textTheme.bodyMedium?.copyWith(fontSize: 13),
               ),
-              const SizedBox(height: 18),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  featureCard(
-                    context: context,
-                    icon: Icons.history_rounded,
-                    title: 'Mood History',
-                    subtitle: 'Look back at your feelings and entries.',
-                    onTap: () {
-                      openScreen(context, const HistoryScreen());
-                    },
-                  ),
-                  const SizedBox(width: 14),
-                  featureCard(
-                    context: context,
-                    icon: Icons.spa_outlined,
-                    title: 'Grounding',
-                    subtitle: 'Reconnect with the present moment.',
-                    onTap: () {
-                      openScreen(context, const GroundingScreen());
-                    },
-                  ),
-                ],
+              const SizedBox(height: 16),
+              _featureRow(
+                _FeatureCard(
+                  icon: Icons.history_rounded,
+                  title: 'Mood History',
+                  subtitle: 'Look back at your feelings and entries.',
+                  onTap: () => _open(context, const HistoryScreen()),
+                ),
+                _FeatureCard(
+                  icon: Icons.insights_rounded,
+                  title: 'Weekly Summary',
+                  subtitle: 'Understand your mood patterns this week.',
+                  onTap: () => _open(context, const WeeklySummaryScreen()),
+                ),
               ),
-const SizedBox(height: 14),
-Row(
-  children: [
-    featureCard(
-      context: context,
-      icon: Icons.insights_rounded,
-      title: 'Weekly Summary',
-      subtitle: 'Understand your mood patterns over the last 7 days.',
-      onTap: () {
-        openScreen(context, const WeeklySummaryScreen());
-      },
-    ),
-  ],
-),
-const SizedBox(height: 14),
-Row(
-  children: [
-    featureCard(
-      context: context,
-      icon: Icons.air_rounded,
-      title: 'Guided Breathing',
-      subtitle: 'Relax with a simple breathing exercise.',
-      onTap: () {
-        openScreen(context, const BreathingScreen());
-      },
-    ),
-  ],
-),
-    const SizedBox(height: 14),
-Row(
-  children: [
-    featureCard(
-      context: context,
-      icon: Icons.calendar_month_rounded,
-      title: 'Mood Calendar',
-      subtitle: 'Explore your emotional journey day by day.',
-      onTap: () {
-        openScreen(context, const MoodCalendarScreen());
-      },
-    ),
-  ],
-),
-              const SizedBox(height: 25),
+              const SizedBox(height: 14),
+              _featureRow(
+                _FeatureCard(
+                  icon: Icons.air_rounded,
+                  title: 'Guided Breathing',
+                  subtitle: 'Relax with a simple breathing exercise.',
+                  onTap: () => _open(context, const BreathingScreen()),
+                ),
+                _FeatureCard(
+                  icon: Icons.spa_outlined,
+                  title: 'Grounding',
+                  subtitle: 'Reconnect with the present moment.',
+                  onTap: () => _open(context, const GroundingScreen()),
+                ),
+              ),
+              const SizedBox(height: 14),
+              _FeatureCard(
+                wide: true,
+                icon: Icons.calendar_month_rounded,
+                title: 'Mood Calendar',
+                subtitle: 'Explore your emotional journey day by day.',
+                onTap: () => _open(context, const MoodCalendarScreen()),
+              ),
+              const SizedBox(height: 26),
+
+              // ---------- Reminder ----------
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(19),
                 decoration: BoxDecoration(
-                  color: colors.secondaryContainer,
+                  color: p.surfaceAlt,
                   borderRadius: BorderRadius.circular(22),
                 ),
                 child: Row(
@@ -344,7 +295,7 @@ Row(
                     Icon(
                       Icons.self_improvement_outlined,
                       size: 38,
-                      color: colors.primary,
+                      color: p.primary,
                     ),
                     const SizedBox(width: 14),
                     Expanded(
@@ -353,16 +304,13 @@ Row(
                         children: [
                           Text(
                             'A gentle reminder',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: theme.textTheme.titleMedium,
                           ),
                           const SizedBox(height: 5),
                           Text(
                             'You do not have to figure everything out today. Take one small step at a time.',
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              fontSize: 12,
+                              fontSize: 13,
                               height: 1.5,
                             ),
                           ),
@@ -372,7 +320,7 @@ Row(
                   ],
                 ),
               ),
-              const SizedBox(height: 25),
+              const SizedBox(height: 22),
               Center(
                 child: Text(
                   'Small steps can make a difference.',
@@ -380,6 +328,110 @@ Row(
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+Widget _featureRow(Widget left, Widget right) {
+  return IntrinsicHeight(
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(child: left),
+        const SizedBox(width: 14),
+        Expanded(child: right),
+      ],
+    ),
+  );
+}
+
+class _FeatureCard extends StatelessWidget {
+  const _FeatureCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    this.wide = false,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  final bool wide;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final p = context.palette;
+
+    final badge = Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: p.surfaceAlt,
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Icon(icon, color: p.primary, size: 26),
+    );
+
+    final texts = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(title, style: theme.textTheme.titleMedium),
+        const SizedBox(height: 5),
+        Text(
+          subtitle,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontSize: 12.5,
+            height: 1.4,
+          ),
+        ),
+      ],
+    );
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: p.shadow,
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Material(
+        color: p.surface,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(22),
+          side: BorderSide(color: p.border),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: wide
+                ? Row(
+                    children: [
+                      badge,
+                      const SizedBox(width: 16),
+                      Expanded(child: texts),
+                      Icon(Icons.chevron_right_rounded, color: p.muted),
+                    ],
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      badge,
+                      const SizedBox(height: 16),
+                      texts,
+                    ],
+                  ),
           ),
         ),
       ),
